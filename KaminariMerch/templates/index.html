@@ -1,0 +1,20 @@
+{% extends "layout.html" %}
+
+{% block head %}
+    {% if current_user.is_authenticated %}
+        <script src="{{ url_for('static', filename='js/index.js') }}"></script>
+    {% endif %}
+{% endblock %}
+
+{% block body %}
+    {% if (products is defined) and products %}
+        <div class="card-columns">
+            {% for item in products %}
+                {% include "components/product_card.html" %}
+            {% endfor %}
+        </div>
+    {% else %}
+        {% include "components/no_product_box.html" %}
+    {% endif %}
+
+{% endblock %}

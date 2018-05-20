@@ -1,0 +1,39 @@
+{% extends "layout.html" %}
+
+{% block head %}
+
+    {% if (cart is defined) and cart %}
+        <script src="{{ url_for('static', filename='js/cart.js') }}"></script>
+    {% endif %}
+
+{% endblock %}
+
+{% block body %}
+    {% if (cart is defined) and cart %}
+        <table class="table table-hover text-center mx-auto" style="max-width: 750px;">
+            <thead>
+                <tr>
+                    <th scope="col">Name</th>
+                    <th scope="col">Price</th>
+                    <th scope="col"></th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for item in cart %}
+                    <tr>
+                        <td>{{ item.name }}</td>
+                        <td>{{ item.price }} ㋛</td>
+                        <td><button class="btn btn-outline-danger remove-button" value="{{ item.id }}">Remove</button></td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        <div class="text-center">
+            <h4 class="text-center">Total Cost: {{ total }} ㋛</h4>
+            <a href="{{ url_for('store_page') }}" class="btn btn-lg btn-primary">Continue Shopping</a>
+            <a href="{{ url_for('checkout') }}" class="btn btn-lg btn-primary">Checkout</a>
+        </div>
+    {% else %}
+        {% include "components/empty_cart.html" %}
+    {% endif %}
+{% endblock %}

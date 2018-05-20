@@ -1,0 +1,34 @@
+<div class="card text-center product">
+    <div class="card-body">
+        <h4 class="card-title">{{ item.name }}</h4>
+        <h6 class="card-subtitle text-muted">{{ item.price }} ㋛</h6>
+    </div>
+    {% if item.image is not none %}
+        <img class="card-img-top" src="{{ item.filepath }}">
+    {% endif %}
+    {% if item.description is not none %}
+        <div class="card-body">
+            <p class="card-text">{{ item.description }}</p>
+        </div>
+    {% endif %}
+    <div class="card-footer">
+        {% if current_user.is_authenticated %}
+            {% if not in_cart(item.id) %}
+                <button type="button" value="{{ item.id }}" class="btn btn-responsive btn-block btn-primary item-button">
+                    <i class="fas fa-shopping-cart btn-icon"></i>
+                    &nbsp;Add To Cart
+                </button>
+            {% else %}
+                <button type="button" class="btn btn-responsive btn-block btn-success" disabled>
+                    Added To Cart
+                </button>
+            {% endif %}
+        {% else %}
+            <a role="button" href="{{ url_for('security.login') }}" class="btn btn-responsive btn-block btn-primary">
+                <i class="fas fa-shopping-cart btn-icon"></i>
+                &nbsp;Add To Cart
+            </a>
+        {% endif %}
+    </div>
+</div>
+

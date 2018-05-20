@@ -1,0 +1,25 @@
+<li class="nav-item dropdown">
+    <a class="nav-link dropdown-toggle" href="" id="loginDropdown" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+        Sign In
+    </a>
+    <div class="dropdown-menu dropdown-menu-right" aria-labelledby="loginDropdown">
+        <form class="px-4 py-3" action="{{ url_for_security('login') }}" method="POST" name="login_user_form">
+            {{ login_user_form.hidden_tag() }}
+            <div class="form-group">
+                <label for="email">Email</label>
+                {{ login_user_form.email(placeholder='Email', class='form-control') }}
+            </div>
+            <div class="form-group">
+                <label for="password">Password</label>
+                {{ login_user_form.password(placeholder='Password', class='form-control') }}
+            </div>
+            <div class="form-group">
+                <label for="remember">Remember Me</label>
+                {{ login_user_form.remember }}
+            </div>
+            {{ login_user_form.submit(class='btn btn-primary btn-block', value="Login") }}
+        </form>
+        <div class="dropdown-divider"></div>
+        <a class="dropdown-item" href="/register">New around here? Sign up</a>
+    </div>
+</li>

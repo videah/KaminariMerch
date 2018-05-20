@@ -1,0 +1,14 @@
+flask
+flask_security
+flask_sqlalchemy
+flask-admin
+flask-qrcode
+flask_socketio
+wtforms
+werkzeug
+markupsafe
+bcrypt
+sqlalchemy==1.1.6
+Pillow
+Flask-HTMLmin
+requests

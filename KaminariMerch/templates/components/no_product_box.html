@@ -1,0 +1,14 @@
+<div class="text-center">
+    <div class="jumbotron">
+        <h1 class="display-4">No Products Found :(</h1>
+        <p class="lead">No products are available, please come back again later.</p>
+        {% if current_user.is_authenticated and current_user.has_role('admin') %}
+            <hr class="my-4">
+            <p>As an Admin you can fix this by selecting one of the following options.</p>
+            <p class="lead btn-options">
+                <a class="btn btn-success btn-lg" href="/admin/products" role="button">Add Products Manually</a>
+                <a class="btn btn-primary btn-lg" href="/example_products" role="button">Generate Example Products</a>
+            </p>
+        {% endif %}
+    </div>
+</div>

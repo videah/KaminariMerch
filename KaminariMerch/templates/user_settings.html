@@ -1,0 +1,47 @@
+{% extends "layout.html" %}
+
+{% macro render_field(field) %}
+    <div class="form-group row">
+        <div class="col-sm-6">
+            {{  field.label }}
+            {{ field(class='form-control') }}
+        </div>
+    </div>
+{% endmacro %}
+
+{% macro render_checkmark(field) %}
+    <div class="form-check row">
+        {{ field(class='form-control') }}
+        {{ field.label }}
+    </div>
+{% endmacro %}
+
+{% block body %}
+
+    <div class="subhead">
+        <h2>Change password</h2>
+    </div>
+    <form class="needs-validation" method="post" novalidate>
+        {{ password_form.hidden_tag() }}
+
+        {{ render_field(password_form.old_password) }}
+        {{ render_field(password_form.new_password) }}
+        {{ render_field(password_form.confirm) }}
+
+        {{ password_form.submit_password(class='btn btn-primary') }}
+    </form>
+
+    <div class="subhead subhead--spacious">
+        <h2 class="text-danger">Delete account</h2>
+    </div>
+
+    <form class="needs-validation" method="post" novalidate>
+        {{ delete_account_form.hidden_tag() }}
+
+        {{ render_field(delete_account_form.password) }}
+        {{ render_field(delete_account_form.confirm) }}
+
+        {{ delete_account_form.submit_delete_account(class='btn btn-danger') }}
+
+    </form>
+{% endblock %}

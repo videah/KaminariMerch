@@ -1,0 +1,31 @@
+{% extends "layout.html" %}
+
+{% block head %}
+    {% if not order.paid %}
+        <script src="{{ url_for('static', filename='js/order.js') }}"></script>
+    {% endif %}
+{% endblock %}
+
+{% block body %}
+    <div class="card mx-auto text-center" style="max-width: 400px;">
+        <div class="card-body">
+            <h4 class="card-title">Price: {{ order.total_cost }} ㋛</h4>
+            <h6 class="card-subtitle text-muted">Order #{{ order.id }}</h6>
+        </div>
+        {% if order.paid %}
+            {% include "components/succeed_tick.html" %}
+            <div class="card-body"></div>
+        {% else %}
+            {% include "components/succeed_tick.html" %}
+            <p class="small">Scan this invoice with your LN-enabled wallet</p>
+            <img id="qr-code" class="card-img-top" src="{{ qrcode(order.payment_request, error_correction='H', icon_img='qr-image.png') }}">
+            <div class="card-body">
+                <p id="payment-request" class="card-text small">{{ order.payment_request }}</p>
+                <a href="lightning:{{ order.payment_request }}" class="btn btn-primary">Open In Wallet</a>
+                <button id="copy-button" class="btn btn-primary">Copy</button>
+                <button id="check-button" class="btn btn-primary" value="{{ order.id }}">Check</button>
+            </div>
+        {% endif %}
+    </div>
+
+{% endblock %}
