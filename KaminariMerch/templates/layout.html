@@ -16,12 +16,17 @@
     {% block head %}{% endblock %}
 </head>
 <body>
-    <nav class="navbar fixed-top navbar-expand-md navbar-dark bg-dark">
-        <a class="navbar-brand" href="/">雷 KaminariMerch</a>
+    <nav class="navbar fixed-top navbar-expand-md navbar-light bg-warning">
+        <a class="navbar-brand" href="/">The Local Theatre</a>
         <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbar">
             <span class="navbar-toggler-icon"></span>
         </button>
-        <div class="navbar-collapse collapse justify-content-stretch" id="navbar">
+        <div class="collapse navbar-collapse" id="navbar">
+            <ul class="navbar-nav mr-auto">
+                <li class="nav-item">
+                    <a class="nav-link">Contact</a>
+                </li>
+            </ul>
             <ul class="navbar-nav ml-auto">
                 {% if current_user.is_authenticated %}
                     <li class="nav-item dropdown">
@@ -37,9 +42,6 @@
                             <a class="dropdown-item" href="/logout"><i class="fas fa-sign-out-alt"></i> Sign Out</a>
                         </div>
                     </li>
-                    <li class="nav-item">
-                        <a class="nav-link cart-icon" href="/cart"><i class="fas fa-shopping-cart"></i> Cart</a>
-                    </li>
                 {% else %}
                     {% include "components/login_dropdown.html" %}
                 {% endif %}
@@ -52,7 +54,7 @@
     </div>
 
         <footer class="footer my-5 pt-5 text-muted text-center text-small">
-            <p class="mb-1">© 2017-2018 KaminariMerch</p>
+            <p class="mb-1">© 2017-2018 The Local Theatre</p>
             <ul class="list-inline">
                 <li class="list-inline-item"><a href="#">Privacy</a></li>
                 <li class="list-inline-item"><a href="#">Terms</a></li>

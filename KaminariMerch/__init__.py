@@ -10,10 +10,9 @@ from flask_socketio import SocketIO, join_room
 from flask_security.utils import hash_password, verify_password
 from flask_security import Security, SQLAlchemyUserDatastore, url_for_security, LoginForm, login_required, current_user
 
-from KaminariMerch.models import User, Order, Product, Role, db
+from KaminariMerch.models import User, Role, db, Post, Comment
 from KaminariMerch.forms import DeleteAccountForm, PasswordResetForm
-from KaminariMerch.utils import generate_example_products, in_cart, add_product_to_cart, remove_product_from_cart
-from KaminariMerch.views import IndexView, UserView, OrderView, ProductView
+from KaminariMerch.views import PostView, CommentView
 
 appdir = path.abspath(path.dirname(__file__))
 imagedir = path.join(appdir, 'static/images')
@@ -37,16 +36,16 @@ def create_app(environment=None):
     # Sets up administration page.
     admin = Admin(
         app,
-        'KaminariMerch Admin',
-        index_view=OrderView(Order, db.session, url='/admin'),
+        'The Local Theatre Admin',
+        index_view=PostView(Post, db.session, url='/admin'),
         template_mode='bootstrap3'
     )
 
 
     # Registers pages to the administration page.
     admin.add_link(MenuLink(name='Home', endpoint='store_page'))
-    admin.add_view(ProductView(session=db.session, name='Products', endpoint='products', model=Product))
-    admin.add_view(UserView(session=db.session, name='Users', endpoint='users', model=User))
+    admin.add_view(CommentView(session=db.session, name='Comments', endpoint='comments', model=Comment))
+    # admin.add_view(UserView(session=db.session, name='Users', endpoint='users', model=User))
 
     # Passes the login form to templates.
     @app.context_processor
@@ -65,79 +64,31 @@ def create_app(environment=None):
         This is where users add items to their cart.
         """
 
-        products = Product.query.all()
+        posts = Post.query.all()
 
-        if 'cart' not in session:
-            session['cart'] = []
+        return render_template('index.html')
 
-        for item in products:
-            if not item.active:
-                products.remove(item)
+    @app.route('/post/<post_id>')
+    def post(post_id):
+        post = Post.query.filter_by(id=post_id).first_or_404()
+        comments = Comment.query.filter_by(post_id=post_id).all()
+        return render_template('post.html', post=post, comments=comments)
 
-        return render_template('index.html', products=products, cart=session['cart'], in_cart=in_cart)
+    @app.route('/post/<post_id>/post_comment', methods=['POST'])
+    @login_required
+    def post_comment(post_id):
 
-    @app.route('/cart')
-    def shopping_cart():
+        text = request.form['comment'] or ''
+        if text:
 
-        """
-        The user cart page, allows removal of items as well as finalizing
-        an order before payment.
-        """
-
-        total = 0
-
-        if 'cart' in session:
-            products = Product.query.filter(Product.id.in_(session['cart'])).all()
-            for product in products:
-                total += product.price
+            comment = Comment(body=text, post_id=post_id, user_id=current_user.id, user_email=current_user.email)
+            db.session.add(comment)
+            db.session.commit()
+            return jsonify({'success': True})
         else:
-            products = []
+            return abort(500)
 
-        return render_template('cart.html', cart=products, total=total)
 
-    @app.route('/add_to_cart', methods=['POST'])
-    @login_required
-    def add_to_cart():
-
-        """
-        API endpoint that adds an item to the request session using
-        a provided Product ID.
-        """
-
-        product = Product.query.get(request.form['id'])
-
-        if not any(str(product.id) in d for d in session['cart']):
-            add_product_to_cart(product)
-
-        return jsonify({'success': True})
-
-    @app.route('/remove_from_cart', methods=['POST'])
-    @login_required
-    def remove_from_cart():
-
-        """
-        API endpoint that removes an item from the request session using a
-        provided Product ID.
-        """
-
-        product = Product.query.get(request.form['id'])
-
-        if any(str(product.id) in d for d in session['cart']):
-            remove_product_from_cart(product)
-
-        return jsonify({'success': True})
-
-    @app.route('/check_payment', methods=['POST'])
-    @login_required
-    def check_payment():
-
-        """
-        Manual payment checking API endpoint for orders.
-        TODO: Authorization.
-        """
-
-        order = Order.query.get(request.form['id'])
-        return jsonify({'paid': order.check_paid()})
 
     @app.route('/settings', methods=['GET', 'POST'])
     @login_required
@@ -172,87 +123,6 @@ def create_app(environment=None):
             delete_account_form=delete_account_form
         )
 
-    @app.route('/checkout')
-    def checkout():
-
-        """
-        Here validate users checkouts before attempting to create an order. If the
-        order was successful then we redirect the user to it.
-        """
-
-        products = Product.query.filter(Product.id.in_(session['cart'])).all()
-        order = current_user.create_order(products)
-
-        # Checks to make sure the order actually was created. It's possible for this
-        # to fail in certain edge cases.
-        if order:
-
-            db.session.add(order)
-            db.session.commit()
-
-            session['cart'] = []
-
-            return redirect(url_for('show_order', order_id=order.id))
-
-        else:
-            return 'Error: Could not create order. Please contact store administration.'
-
-    @app.route('/order/<int:order_id>')
-    @login_required
-    def show_order(order_id):
-
-        """
-        Order page that takes an integer as the id. Checks to make sure the user is linked
-        to the order before displaying it.
-        """
-
-        if any(order_id in i for i in current_user.get_order_ids()):
-
-            order = Order.query.get(order_id)
-
-            if not order.paid:
-                order.check_paid()
-
-            return render_template('order.html', order=order)
-
-        else:
-            return abort(404)
-
-    @app.route('/confirm_payment', methods=['POST'])
-    def payment_webhook():
-
-        """
-        This is a payment webhook that triggers when a payment is received.
-
-        Because this webhook isn't authenticated, we don't trust the payment information on its own.
-        We check the payment status ourselves before updating.
-        """
-
-        charge = request.get_json()
-        charge_id = charge['data']['id']
-        order = Order.query.filter_by(charge_id=charge_id).first()
-
-        if order:
-            order.check_paid()
-            if order.paid:
-                return jsonify({'success': True}), 200, {'ContentType': 'application/json'}
-
-        return jsonify({'success': False}), 400, {'ContentType': 'application/json'}
-
-    @app.route('/example_products')
-    @login_required
-    def example():
-
-        """
-        Generates example products for quick evaluation of storefront functionality.
-        """
-
-        if current_user.has_role('admin'):
-            generate_example_products()
-            return redirect(url_for('store_page'))
-        else:
-            return abort(404)
-
     @app.before_first_request
     def before_first_request():
 
@@ -284,50 +154,7 @@ def create_app(environment=None):
         user_datastore.add_role_to_user('admin@example.com', 'admin')
         db.session.commit()
 
+        db.session.add(Post(title='Test Post', body='Lorem Ipsum'))
+        db.session.commit()
+
     return app
-
-
-def create_socketed_app(environment=None):
-
-    """
-    This creates a wrapper around the app that enables websocket functionality.
-    We can update order status the instant a payment is received without the
-    user having to interact. It's completely optional but is recommended for a smooth
-    user experience.
-    """
-
-    app = create_app(environment)
-    socket = SocketIO(app)
-
-    @socket.on('subscribe')
-    def subscribe_webhook(data):
-
-        """
-        Subscribes a user to a websocket room to make it easier to
-        notify of successful payments.
-        """
-
-        join_room(data['order'])
-
-    @app.route('/confirm_payment_socket', methods=['POST'])
-    def payment_webhook_socket():
-
-        """
-        This is an extended webhook that includes websockets.
-        From here we can send out a message to the user telling them that their payment's
-        been received and the order was successful.
-        """
-
-        charge = request.get_json()
-        charge_id = charge['data']['id']
-        order = Order.query.filter_by(charge_id=charge_id).first()
-
-        if order:
-            order.check_paid()
-            if order.paid:
-                socket.emit('confirm_payment', True, room=order.id)
-                return jsonify({'success': True}), 200, {'ContentType': 'application/json'}
-
-        return jsonify({'success': False}), 400, {'ContentType': 'application/json'}
-
-    return app, socket
